@@ -4,18 +4,19 @@ const axios = require("axios");
 // Array of apis for fetching
 const apis = workerData;
 
-const results = [];
+let data = [];
 
-for (api of apis) {
-  axios
-    .get(api)
-    .then((response) => {
-      results.push(response);
-    })
-    .catch((err) => {
-      console.log("Error");
-    });
-}
-
-// Return results
-parentPort.postMessage(results);
+Promise.all(
+  apis.map((api) =>
+    axios
+      .get(api)
+      .then((response) => {
+        data.push(response.data);
+      })
+      .catch((err) => {
+        console.log("Error");
+      })
+  )
+).then((_) => {
+  parentPort.postMessage(data);
+});

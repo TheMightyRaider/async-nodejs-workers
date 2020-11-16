@@ -1,4 +1,4 @@
-const { Worker, parentPort, workerData } = require("worker_threads");
+const { parentPort, workerData } = require("worker_threads");
 const axios = require("axios");
 
 // Array of apis for fetching
@@ -14,7 +14,7 @@ Promise.all(
         data.push(response.data);
       })
       .catch((err) => {
-        console.log("Error");
+        console.log(err, "Error");
       })
   )
 ).then((_) => {

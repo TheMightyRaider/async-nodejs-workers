@@ -18,5 +18,6 @@ Promise.all(
       })
   )
 ).then((_) => {
+  // Sending the data back to the parent thread
   parentPort.postMessage(data);
 });

@@ -5,6 +5,7 @@ const workerCount = 16;
 
 const workerPath = path.resolve("worker.js");
 
+// Sample API
 let apis = [];
 
 for (i = 0; i < 50; i++) {
@@ -15,15 +16,21 @@ for (i = 0; i < 50; i++) {
 const fetchData = (apis) => {
   let startTime = Date.now();
   return new Promise(async (mainresolve, mainreject) => {
+    // Calculating the data load for each worker depending on the worker count
     let threadLoad = Math.ceil(apis.length / workerCount);
+
+    // Contains the data load for each worker
     let segments = [];
 
     let totalCapacity = threadLoad * workerCount;
-    let unUsedProcess =
+
+    // Checking if there is any worker with no load
+    let unUsedWorker =
       apis.length < totalCapacity
         ? (totalCapacity - apis.length) / threadLoad
         : 0;
 
+    // Segregating the data load for each worker.
     for (i = 0; i < workerCount; i++) {
       start = i * threadLoad;
       end = start + threadLoad;
@@ -34,15 +41,17 @@ const fetchData = (apis) => {
       segments.push(segment);
     }
 
-    if (unUsedProcess) {
-      let unUsedProcessLoad = Math.floor(threadLoad / 2);
-      for (segmentIndex = 0; segmentIndex < unUsedProcess; segmentIndex++) {
+    // When there is a worker greater than the load, we split the existing worker load into the extra worker.
+    if (unUsedWorker) {
+      let unUsedWorkerLoad = Math.floor(threadLoad / 2);
+      for (segmentIndex = 0; segmentIndex < unUsedWorker; segmentIndex++) {
         let updatedSegment = segments[segmentIndex];
-        let newSegment = updatedSegment.splice(0, unUsedProcessLoad);
+        let newSegment = updatedSegment.splice(0, unUsedWorkerLoad);
         segments.push(newSegment);
       }
     }
 
+    // We generate a thread for each segment and wait till all the thread complete their work
     const results = await Promise.all(
       segments.map(
         (segment) =>
@@ -61,6 +70,8 @@ const fetchData = (apis) => {
     );
 
     let finalResult = [];
+
+    // Once all the thread returns the result,we concatenate the results into a single array.
     results.forEach((item) => {
       finalResult = finalResult.concat(item);
     });

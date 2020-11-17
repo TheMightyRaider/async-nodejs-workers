@@ -1,7 +1,7 @@
 const { Worker } = require("worker_threads");
 const path = require("path");
 
-const CPUCount = 16;
+const workerCount = 16;
 
 const workerPath = path.resolve("worker.js");
 
@@ -15,10 +15,16 @@ for (i = 0; i < 50; i++) {
 const fetchData = (apis) => {
   let startTime = Date.now();
   return new Promise(async (mainresolve, mainreject) => {
-    let threadLoad = Math.ceil(apis.length / CPUCount);
+    let threadLoad = Math.ceil(apis.length / workerCount);
     let segments = [];
 
-    for (i = 0; i < CPUCount; i++) {
+    let totalCapacity = threadLoad * workerCount;
+    let unUsedProcess =
+      apis.length < totalCapacity
+        ? (totalCapacity - apis.length) / threadLoad
+        : 0;
+
+    for (i = 0; i < workerCount; i++) {
       start = i * threadLoad;
       end = start + threadLoad;
       if (i != 0 && end == apis.length) {
@@ -26,6 +32,15 @@ const fetchData = (apis) => {
       }
       const segment = apis.slice(start, end);
       segments.push(segment);
+    }
+
+    if (unUsedProcess) {
+      let unUsedProcessLoad = Math.floor(threadLoad / 2);
+      for (segmentIndex = 0; segmentIndex < unUsedProcess; segmentIndex++) {
+        let updatedSegment = segments[segmentIndex];
+        let newSegment = updatedSegment.splice(0, unUsedProcessLoad);
+        segments.push(newSegment);
+      }
     }
 
     const results = await Promise.all(
